@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pandas
+pydantic
+python-dotenv
+boto3
+openai
+openrouter
+tavily-python
