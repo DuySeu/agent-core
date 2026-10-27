@@ -55,3 +55,16 @@ Only `core/config` + `core/constants` + `core/prompts`, `models/*` (except route
 ## Known rough edges
 
 - `BedrockProvider.invoke` (`models/provider.py`) reads output tokens from `response.usage.completion_tokens` (an OpenAI-shaped attribute) instead of the Bedrock `usage["output_tokens"]`, a latent bug carried over from before the migration.
+
+## Harness: orchestrator agent
+
+**Goal:** Xây orchestrator agent trả `RoutingDecision` (structured output) để hệ thống điều phối tới agent phù hợp theo kiến trúc router, sequential, parallel.
+
+**Trigger conditions:** Khi được yêu cầu build, thiết kế, sửa, mở rộng hoặc chạy lại phần orchestrator agent / routing agent, dùng skill `orchestrator-build`. Câu hỏi đơn giản về code có thể trả lời trực tiếp.
+
+**Change history:**
+
+| Date | Change | Target | Reason |
+| --- | --- | --- | --- |
+| 2026-10-27 | Initial setup with Harness v2 | All | - |
+| 2026-10-27 | Skill trỏ tới spec làm nguồn duy nhất; bỏ schema baseline, đổi thành routing-cases.md; Bước 1 chỉ chạy khi chưa có spec | routing-contract, orchestrator-build | Spec orchestrator đã duyệt (OpenRouter, catalog do người gọi truyền) mâu thuẫn với harness ban đầu |
