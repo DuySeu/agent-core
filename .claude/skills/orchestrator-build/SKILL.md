@@ -74,12 +74,12 @@ Quy tắc liên lạc: leader chuyển tin giữa implementer và reviewer; hai 
 Agent chính tự chạy, không tin vào báo cáo của agent:
 
 ```bash
-PYTHONPATH=src .venv/bin/python tests/test_agents/test_routing_contract.py
-PYTHONPATH=src .venv/bin/python tests/test_agents/test_orchestrator_agent.py
-PYTHONPATH=src .venv/bin/python tests/test_tools/test_registry.py
+PYTHONPATH=src ../.venv/bin/python tests/test_agents/test_routing_contract.py
+PYTHONPATH=src ../.venv/bin/python tests/test_agents/test_orchestrator_agent.py
+PYTHONPATH=src ../.venv/bin/python tests/test_tools/test_registry.py
 ```
 
-Test cuối là để chắc thay đổi không làm hỏng tool registry. Nếu có `OPENROUTER_API_KEY`, chạy thêm `PYTHONPATH=src .venv/bin/python tests/test_agents/eval_routing_live.py` và đưa người dùng bảng kết quả so với kết quả mong đợi trong `routing-cases.md`; ca lệch là thông tin để sửa prompt, không phải lỗi test. Không có key thì ghi rõ đã bỏ qua. Báo người dùng: file đã đổi, output test (cả lỗi nếu có), phát hiện "nên sửa"/"gợi ý" còn lại, và mọi thay đổi public API. Không commit.
+Test cuối là để chắc thay đổi không làm hỏng tool registry. Nếu có `OPENROUTER_API_KEY`, chạy thêm `PYTHONPATH=src ../.venv/bin/python tests/test_agents/eval_routing_live.py` và đưa người dùng bảng kết quả so với kết quả mong đợi trong `routing-cases.md`; ca lệch là thông tin để sửa prompt, không phải lỗi test. Không có key thì ghi rõ đã bỏ qua. Báo người dùng: file đã đổi, output test (cả lỗi nếu có), phát hiện "nên sửa"/"gợi ý" còn lại, và mọi thay đổi public API. Không commit.
 
 ## Xử lý lỗi
 

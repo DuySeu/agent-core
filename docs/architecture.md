@@ -15,7 +15,7 @@ agent-core/
 ├── .gitignore
 ├── README.md
 ├── LICENSE
-├── requirements.txt             # Dependencies Python
+├── pyproject.toml               # Dependencies Python (+ uv.lock)
 ├── Dockerfile                   # Image build (đang trống)
 ├── docker-compose.yml           # Postgres + MinIO + Qdrant (hạ tầng dev)
 ├── CLAUDE.md                    # Hướng dẫn cho Claude Code

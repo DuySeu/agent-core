@@ -35,7 +35,7 @@ Khi code và spec lệch nhau, spec thắng. Khi thấy spec sai hoặc thiếu,
 
 ## Kiểm tra
 
-Repo không có pytest; test là smoke script có `main()`, dùng `assert`, chạy bằng `PYTHONPATH=src .venv/bin/python <file>`. Danh sách file và ca test nằm trong mục "Kiểm thử" của spec.
+Repo không có pytest; test là smoke script có `main()`, dùng `assert`, chạy bằng `PYTHONPATH=src ../.venv/bin/python <file>`. Danh sách file và ca test nằm trong mục "Kiểm thử" của spec.
 
 - Tên hàm test nói rõ trường hợp, ví dụ `rejects_unknown_agent_name`, `falls_back_after_two_invalid_outputs`.
 - Assert trên giá trị trả về và message đã gửi cho provider, không assert số lần gọi hàm nội bộ.

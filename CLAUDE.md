@@ -9,30 +9,29 @@ A small, provider-agnostic agentic LLM framework in Python. A single set of clas
 ## Commands
 
 ```bash
-python3.13 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+UV_PROJECT_ENVIRONMENT=../.venv uv sync --inexact   # install pyproject.toml + uv.lock into the shared Lab venv
 
 # src/ is the source root - put it on PYTHONPATH to run anything
-PYTHONPATH=src python tests/test_llm.py       # smoke scripts, NOT pytest - each has its own main()
-PYTHONPATH=src python tests/test_agents/test_agent.py
-PYTHONPATH=src python tests/test_tools/test_registry.py   # asserts tool discovery/registry
-PYTHONPATH=src python tests/test_api/test_health.py   # boots the server, hits /health, shuts down
+PYTHONPATH=src ../.venv/bin/python tests/test_llm.py       # smoke scripts, NOT pytest - each has its own main()
+PYTHONPATH=src ../.venv/bin/python tests/test_agents/test_agent.py
+PYTHONPATH=src ../.venv/bin/python tests/test_tools/test_registry.py   # asserts tool discovery/registry
+PYTHONPATH=src ../.venv/bin/python tests/test_api/test_health.py   # boots the server, hits /health, shuts down
 
 # run the FastAPI server (Swagger at /docs)
-PYTHONPATH=src python -m uvicorn api.main:app --reload
+PYTHONPATH=src ../.venv/bin/python -m uvicorn api.main:app --reload
 
 docker compose up -d   # dev infra: Postgres, MinIO, Qdrant (not wired into code yet)
 ```
 
 There is no build step, linter config, or pytest/CI setup. `tests/**/*.py` are manual smoke scripts you run directly (some assert, most just print). `Dockerfile` is empty.
 
-Use `.venv` (Python 3.13); system `/usr/bin/python3` is 3.9 and too old. `tools/implementations/web_search_tool.py` uses `tavily-python` and needs `TAVILY_API_KEY` in `.env`; it lazy-imports the client, so the tool only fails when actually invoked without the key/package.
+Use the shared Lab venv at `../.venv` (Python 3.12, managed by uv, has no pip); system `/usr/bin/python3` is 3.9 and too old. Do not create a local `.venv` in this repo: no `python -m venv`, no `uv venv`, no `uv sync`/`uv run` without `UV_PROJECT_ENVIRONMENT=../.venv` (they create `./.venv`). Dependencies live in `pyproject.toml` + `uv.lock`: add one with `uv add --no-sync <pkg>`, then run the sync command above. Keep `--inexact` so packages of the other Lab repos stay installed. `tools/implementations/web_search_tool.py` uses `tavily-python` and needs `TAVILY_API_KEY` in `.env`; it lazy-imports the client, so the tool only fails when actually invoked without the key/package.
 
 Credentials come from `.env` (loaded by `src/core/config.py` via `python-dotenv`; see `.env.example`): `OPENROUTER_API_KEY`, and for Bedrock `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_ROLE_ARN`. When `AWS_ROLE_ARN` is set, both `BedrockProvider` and `RAG` assume that role via STS before creating the client.
 
 ## Import convention
 
-Code uses **absolute imports rooted at `src/`**: `from core.config import config`, `from models.provider import BedrockProvider`, `from agents.base_agent import Agent`. Nothing sets `sys.path` automatically (no `pyproject.toml`/`conftest.py`), so **`src/` must be on `PYTHONPATH`** to run or import anything. An `ImportError` is almost always a missing-path problem, not a wrong import.
+Code uses **absolute imports rooted at `src/`**: `from core.config import config`, `from models.provider import BedrockProvider`, `from agents.base_agent import Agent`. Nothing sets `sys.path` automatically (`pyproject.toml` has no pytest config, no `conftest.py`), so **`src/` must be on `PYTHONPATH`** to run or import anything. An `ImportError` is almost always a missing-path problem, not a wrong import.
 
 ## Architecture
 

@@ -4,12 +4,10 @@ Framework agentic LLM viết bằng Python, không phụ thuộc provider: cùng
 
 ## Cài đặt
 
-Cần Python 3.13 (`/usr/bin/python3` của macOS là 3.9, quá cũ).
+Dependency khai báo trong `pyproject.toml` + `uv.lock`, cài vào venv dùng chung của Lab (`../.venv`, Python 3.12), không tạo `.venv` riêng cho repo.
 
 ```bash
-python3.13 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+UV_PROJECT_ENVIRONMENT=../.venv uv sync --inexact
 cp .env.example .env   # điền key
 ```
 
