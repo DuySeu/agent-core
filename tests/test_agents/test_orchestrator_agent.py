@@ -4,7 +4,7 @@ import json
 
 from agents.orchestrator_agent import OrchestratorAgent
 from core.config import config
-from models.base import LLMProvider, LLMResponse
+from models.llm_factory import LLMProvider, LLMResponse
 from orchestration.routing_parser import parse_output
 from orchestration.routing_schema import AgentSpec
 
@@ -35,19 +35,20 @@ TWO_ERRORS = json.dumps(
 
 # Returns scripted answers in order and records every call it receives
 class FakeProvider(LLMProvider):
+    name = "fake"
+
     def __init__(self, answers):
-        super().__init__("fake/model", {})
         self.answers = list(answers)
         self.calls = []
 
-    def invoke(self, messages, system_prompt, tools=None):
-        self.calls.append({"messages": messages, "system_prompt": system_prompt})
+    def invoke(self, model_id, messages, system_prompt, *, tools=None, response_format=None, timeout_s=None):
+        self.calls.append({"model_id": model_id, "messages": messages, "system_prompt": system_prompt})
         answer = self.answers.pop(0)
         if isinstance(answer, Exception):
             raise answer
         return LLMResponse(answer=answer, input_tokens=100, output_tokens=20)
 
-    def invoke_stream(self, messages, system_prompt, tools=None):
+    def invoke_stream(self, model_id, messages, system_prompt, *, tools=None, timeout_s=None):
         raise NotImplementedError
 
 
@@ -219,6 +220,12 @@ def test_provider_exception_propagates():
         except RuntimeError:
             continue
         raise AssertionError("expected RuntimeError to propagate")
+
+
+def test_sends_model_id_on_every_call():
+    orchestrator, llm = make(["not json", VALID])
+    orchestrator.route(REQUEST, CATALOG)
+    assert [call["model_id"] for call in llm.calls] == ["fake/model", "fake/model"]
 
 
 def test_same_input_sends_identical_llm_input():

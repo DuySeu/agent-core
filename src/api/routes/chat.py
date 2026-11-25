@@ -1,12 +1,11 @@
 """Chat endpoint."""
 
-from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from core.constants import model
-from models.llm_factory import LLM
+from core.wiring import build_llm
 
 router = APIRouter()
 
@@ -22,31 +21,24 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    answer: Optional[str] = None
+    answer: str | None = None
     input_tokens: int
     output_tokens: int
-
-
-def _build_llm(req: ChatRequest) -> LLM:
-    inference_config = {
-        "max_tokens": req.max_tokens,
-        "temperature": req.temperature,
-        "top_p": req.top_p,
-    }
-    return LLM(
-        system_prompt=req.system_prompt,
-        inference_config=inference_config,
-        provider=req.provider,
-        model_id=req.model_id,
-    )
 
 
 @router.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     """Send a single message to the LLM and return the full answer."""
-    llm = _build_llm(req)
+    llm = build_llm(req.provider, req.max_tokens)
     try:
-        return llm.invoke(req.message)
+        response = llm.invoke(
+            req.model_id, [{"role": "user", "content": req.message}], req.system_prompt
+        )
+        return ChatResponse(
+            answer=response.answer,
+            input_tokens=response.input_tokens,
+            output_tokens=response.output_tokens,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
@@ -54,12 +46,15 @@ def chat(req: ChatRequest):
 @router.post("/chat/stream")
 def chat_stream(req: ChatRequest):
     """Stream the LLM answer chunk-by-chunk as plain text."""
-    llm = _build_llm(req)
+    llm = build_llm(req.provider, req.max_tokens)
 
     def token_generator():
         try:
-            for chunk in llm.invoke_stream(req.message):
-                yield chunk
+            for chunk in llm.invoke_stream(
+                req.model_id, [{"role": "user", "content": req.message}], req.system_prompt
+            ):
+                if chunk.delta:
+                    yield chunk.delta
         except Exception as e:
             yield f"\n[error] {type(e).__name__}: {e}"
 

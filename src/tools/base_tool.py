@@ -19,19 +19,20 @@ The decorator registers the tool by its schema ``name`` and returns the function
 unchanged, so it stays directly callable.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict
+from typing import Any
 
 
 @dataclass
 class Tool:
     name: str
     description: str
-    input_schema: Dict[str, Any]
+    input_schema: dict[str, Any]
     func: Callable
 
     @property
-    def schema(self) -> Dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         """Anthropic-format schema consumed by the providers."""
         return {
             "name": self.name,
@@ -43,7 +44,7 @@ class Tool:
         return self.func(**kwargs)
 
 
-def tool(schema: Dict[str, Any]) -> Callable:
+def tool(schema: dict[str, Any]) -> Callable:
     """Register the decorated function as a Tool built from ``schema``.
 
     Returns the function unchanged so it remains directly callable.

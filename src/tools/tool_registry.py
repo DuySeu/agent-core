@@ -8,14 +8,12 @@ The top-level ``from tools.base_tool import Tool`` is cycle-safe: ``base_tool``
 only imports this ``registry`` lazily, inside the decorator body.
 """
 
-from typing import Dict, List
-
 from tools.base_tool import Tool
 
 
 class ToolRegistry:
     def __init__(self):
-        self._tools: Dict[str, Tool] = {}
+        self._tools: dict[str, Tool] = {}
         self._discovered = False
 
     def register(self, tool: Tool) -> None:
@@ -38,10 +36,10 @@ class ToolRegistry:
             raise ValueError(f"Unknown tool {name!r}. Available: {self.all_names()}")
         return self._tools[name]
 
-    def get_many(self, names: List[str]) -> List[Tool]:
+    def get_many(self, names: list[str]) -> list[Tool]:
         return [self.get(name) for name in names]
 
-    def all_names(self) -> List[str]:
+    def all_names(self) -> list[str]:
         self.discover()
         return sorted(self._tools)
 

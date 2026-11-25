@@ -1,5 +1,5 @@
 import logging
-from models.llm_factory import LLM
+from core.wiring import build_llm
 from core.constants import model
 
 # Setup logging
@@ -21,14 +21,10 @@ def main():
     # To test OpenAI/OpenRouter, ensure OPENROUTER_API_KEY is set in .env or config
     # and set agent.provider = "openai" manually or via constructor if refactored.
 
-    llm = LLM(
-        system_prompt="you are a helpful assistant",
-        inference_config=inference_config,
-        provider="openai",
-        model_id=model.MIMO_V2_FLASH,
-    )
+    llm = build_llm("openai", inference_config["max_tokens"])
+    model_id = model.MIMO_V2_FLASH
 
-    print(f"Provider: {llm.provider}")
+    print(f"Provider: {llm.name}")
 
     user_message = "Tell me a short story about a brave coder."
 
@@ -37,8 +33,11 @@ def main():
 
     # Test invoke_stream
     try:
-        for chunk in llm.invoke_stream(user_message):
-            print(chunk, end="", flush=True)
+        for chunk in llm.invoke_stream(
+            model_id, [{"role": "user", "content": user_message}], "you are a helpful assistant"
+        ):
+            if chunk.delta:
+                print(chunk.delta, end="", flush=True)
     except Exception as e:
         print(f"\nError during stream: {e}")
 

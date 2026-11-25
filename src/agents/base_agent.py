@@ -1,7 +1,8 @@
-from typing import List, Dict, Any, Generator, Optional
 import json
-from models.base import LLMProvider
-from models.provider import OpenAIProvider, OpenRouterProvider, BedrockProvider
+from collections.abc import Generator
+from typing import Any
+
+from core.wiring import build_llm
 from tools.tool_registry import registry
 
 
@@ -13,24 +14,19 @@ class Agent:
         provider: str,
         model_id: str,
         max_history: int = 20,
-        tools: Optional[List[str]] = None,
+        tools: list[str] | None = None,
     ):
         self.system_prompt = system_prompt
         self.inference_config = inference_config
         self.provider = provider
         self.model_id = model_id
         self.max_history = max_history
-        self.chat_history: List[Dict[str, Any]] = []
+        self.chat_history: list[dict[str, Any]] = []
         self.tools = []
         self.tool_registry = {}
 
         # Initialize provider
-        if provider == "openai":
-            self.llm: LLMProvider = OpenAIProvider(model_id, inference_config)
-        elif provider == "openrouter":
-            self.llm: LLMProvider = OpenRouterProvider(model_id, inference_config)
-        else:
-            self.llm: LLMProvider = BedrockProvider(model_id, inference_config)
+        self.llm = build_llm(provider, inference_config.get("max_tokens", 1000))
 
         # Resolve tools by name from the registry
         for name in tools or []:
@@ -52,12 +48,13 @@ class Agent:
         if len(self.chat_history) >= self.max_history:
             self.chat_history = self.chat_history[4:]
 
-    def invoke(self, message: str) -> Dict[str, Any]:
+    def invoke(self, message: str) -> dict[str, Any]:
         if message:
             self.chat_history.append({"role": "user", "content": message})
 
         while True:
             response_obj = self.llm.invoke(
+                self.model_id,
                 messages=self.chat_history,
                 system_prompt=self.system_prompt,
                 tools=self.tools if self.tools else None,
@@ -161,6 +158,7 @@ class Agent:
 
         while True:
             backend_stream = self.llm.invoke_stream(
+                self.model_id,
                 messages=self.chat_history,
                 system_prompt=self.system_prompt,
                 tools=self.tools if self.tools else None,

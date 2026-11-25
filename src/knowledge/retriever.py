@@ -1,6 +1,6 @@
 import boto3
 from botocore.exceptions import ClientError
-from typing import List, Tuple
+
 from core.config import config
 from core.constants import region
 
@@ -35,7 +35,7 @@ class RAG:
 
     def retrieve_context(
         self, query: str, kbId: str, numberOfResults: int = 5
-    ) -> List[dict]:
+    ) -> list[dict]:
         # Initate bedrock client to retrieve context
         response = self._create_client().retrieve(
             retrievalQuery={"text": query},
@@ -49,8 +49,8 @@ class RAG:
         return response["retrievalResults"]
 
     def get_contexts(
-        self, retrieval_results: List[dict]
-    ) -> Tuple[List[str], List[str], List[float]]:
+        self, retrieval_results: list[dict]
+    ) -> tuple[list[str], list[str], list[float]]:
         contexts = []
         sources = []
         scores = []
@@ -63,7 +63,7 @@ class RAG:
         unique_sources = list(set(sources))
         return contexts, unique_sources, scores
 
-    def _parse_s3_uri(self, s3_uri: str) -> Tuple[str, str]:
+    def _parse_s3_uri(self, s3_uri: str) -> tuple[str, str]:
         if s3_uri.startswith("s3://"):
             s3_uri = s3_uri[5:]
         else:
@@ -86,8 +86,8 @@ class RAG:
         return response
 
     def generate_presigned_urls(
-        self, s3_uris: List[str], expiration: int = 7200
-    ) -> List[str]:
+        self, s3_uris: list[str], expiration: int = 7200
+    ) -> list[str]:
         presigned_urls = []
         for s3_uri in s3_uris:
             bucket_name, object_key = self._parse_s3_uri(s3_uri)

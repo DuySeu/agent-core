@@ -13,20 +13,30 @@ from typing import Any
 
 from core.config import config
 from core.prompts import orchestrator_prompt, orchestrator_repair_prompt
-from models.base import LLMProvider
-from models.provider import OpenRouterProvider
+from core.wiring import build_llm
+from models.llm_factory import LLMProvider
 from orchestration.routing_parser import parse_output
-from orchestration.routing_schema import AgentSpec, LLMRoutingOutput, RoutingDecision, RoutingMeta
+from orchestration.routing_schema import (
+    AgentSpec,
+    LLMRoutingOutput,
+    RoutingDecision,
+    RoutingMeta,
+)
 
 
 class OrchestratorAgent:
-    def __init__(self, model_id: str, inference_config: dict, llm: LLMProvider | None = None):
+    def __init__(
+        self, model_id: str, inference_config: dict, llm: LLMProvider | None = None
+    ):
         # An injected provider (tests) skips the key check
         if llm is None:
             if not config.OPENROUTER_API_KEY:
-                raise ValueError("OPENROUTER_API_KEY is not set; the orchestrator runs on OpenRouter")
-            llm = OpenRouterProvider(model_id, inference_config)
+                raise ValueError(
+                    "OPENROUTER_API_KEY is not set; the orchestrator runs on OpenRouter"
+                )
+            llm = build_llm("openrouter", inference_config.get("max_tokens", 1024))
         self.llm = llm
+        self.model_id = model_id
 
     # Decide which agents handle the last user message and how they are arranged
     def route(
@@ -38,7 +48,9 @@ class OrchestratorAgent:
         folded = [spec.name.casefold() for spec in catalog]
         duplicates = sorted({name for name in folded if folded.count(name) > 1})
         if duplicates:
-            raise ValueError(f"catalog has duplicate agent names (case-insensitive): {duplicates}")
+            raise ValueError(
+                f"catalog has duplicate agent names (case-insensitive): {duplicates}"
+            )
 
         # The request is the last original message; filtering applies to history only
         if not messages:
@@ -71,7 +83,7 @@ class OrchestratorAgent:
         }
 
         # Attempt 1
-        response = self.llm.invoke([user_payload], system_prompt)
+        response = self.llm.invoke(self.model_id, [user_payload], system_prompt)
         input_tokens, output_tokens = response.input_tokens, response.output_tokens
         output, errors = parse_output(response.answer, catalog)
         attempts = 1
@@ -81,16 +93,21 @@ class OrchestratorAgent:
             repair_messages = [
                 user_payload,
                 {"role": "assistant", "content": response.answer or "(empty)"},
-                {"role": "user", "content": orchestrator_repair_prompt.format(errors="\n".join(errors))},
+                {
+                    "role": "user",
+                    "content": orchestrator_repair_prompt.format(
+                        errors="\n".join(errors)
+                    ),
+                },
             ]
-            response = self.llm.invoke(repair_messages, system_prompt)
+            response = self.llm.invoke(self.model_id, repair_messages, system_prompt)
             input_tokens += response.input_tokens
             output_tokens += response.output_tokens
             output, errors = parse_output(response.answer, catalog)
             attempts = 2
 
         meta = RoutingMeta(
-            model_id=self.llm.model_id,
+            model_id=self.model_id,
             attempts=attempts,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -117,7 +134,9 @@ def _message_text(content: Any) -> str:
         texts = [
             block["text"]
             for block in content
-            if isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str)
+            if isinstance(block, dict)
+            and block.get("type") == "text"
+            and isinstance(block.get("text"), str)
         ]
         return "\n".join(texts).strip()
     return ""
